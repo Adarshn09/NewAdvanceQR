@@ -1,0 +1,571 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator & Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#6366F1',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- @COMPONENT: Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-qrcode text-primary text-2xl mr-3"></i>
+                    <h1 class="text-xl font-semibold text-gray-900">QR Manager</h1>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#generator" class="text-primary font-medium border-b-2 border-primary pb-1">Generator</a>
+                    <a href="#manage" class="text-gray-500 hover:text-gray-700 transition-colors">Manage</a>
+                    <a href="#analytics" class="text-gray-500 hover:text-gray-700 transition-colors">Analytics</a>
+                </nav>
+                <button class="md:hidden text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- @COMPONENT: QRGenerator -->
+        <section id="generator" class="mb-12">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- QR Generation Form -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-6">Generate QR Code</h2>
+                    
+                    <form data-implementation="QR generation form with validation">
+                        <!-- Input Type Selector -->
+                        <div class="mb-6">
+                            <label class="text-sm font-medium text-gray-700 mb-3 block">Input Type</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-mock="true">
+                                    <i class="fas fa-link mr-2"></i>URL
+                                </button>
+                                <button type="button" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" data-mock="true">
+                                    <i class="fas fa-font mr-2"></i>Text
+                                </button>
+                                <button type="button" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" data-mock="true">
+                                    <i class="fas fa-cog mr-2"></i>Custom
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Input Field -->
+                        <div class="mb-6">
+                            <label for="qr-input" class="block text-sm font-medium text-gray-700 mb-2">Enter URL or Text</label>
+                            <textarea 
+                                id="qr-input" 
+                                rows="3" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all"
+                                placeholder="https://example.com or enter any text..."
+                                data-mock="true"
+                            >https://example.com</textarea>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div class="mb-6">
+                            <button type="button" class="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors" data-implementation="Toggle advanced options">
+                                <i class="fas fa-chevron-right mr-2 transition-transform"></i>
+                                Advanced Options
+                            </button>
+                            
+                            <!-- Hidden advanced options panel -->
+                            <div class="hidden mt-4 p-4 bg-gray-50 rounded-lg border">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Error Correction</label>
+                                        <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-transparent" data-mock="true">
+                                            <option>Low (7%)</option>
+                                            <option selected>Medium (15%)</option>
+                                            <option>Quartile (25%)</option>
+                                            <option>High (30%)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Size</label>
+                                        <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-transparent" data-mock="true">
+                                            <option>Small (200px)</option>
+                                            <option selected>Medium (400px)</option>
+                                            <option>Large (600px)</option>
+                                            <option>Extra Large (800px)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enable Redirect Toggle -->
+                        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Enable Dynamic Redirects</h3>
+                                    <p class="text-xs text-gray-600 mt-1">Create a short URL that you can update later without changing the QR code</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked data-mock="true">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <button 
+                            type="submit" 
+                            class="w-full bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            data-implementation="Generate QR code with loading state"
+                            data-mock="true"
+                        >
+                            <i class="fas fa-qrcode mr-2"></i>
+                            Generate QR Code
+                        </button>
+                    </form>
+                </div>
+
+                <!-- QR Code Display -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Generated QR Code</h3>
+                    
+                    <!-- QR Code Container -->
+                    <div class="text-center mb-6">
+                        <div class="inline-block p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <!-- Placeholder QR Code - In real implementation, this would be dynamically generated -->
+                            <div class="w-64 h-64 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center" data-mock="true" data-implementation="Replace with actual QR code canvas/image">
+                                <div class="text-center">
+                                    <i class="fas fa-qrcode text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-500">QR Code will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Info -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Short URL:</span>
+                                <p class="font-mono text-primary" data-bind="shortUrl" data-mock="true">qr.ly/abc123</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Target:</span>
+                                <p class="font-mono text-gray-900 truncate" data-bind="targetUrl" data-mock="true">https://example.com</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium" data-implementation="Download QR code as PNG/SVG">
+                            <i class="fas fa-download mr-2"></i>
+                            Download
+                        </button>
+                        <button class="flex items-center justify-center px-4 py-2 bg-secondary text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm font-medium" data-implementation="Copy short URL to clipboard">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: QRGenerator -->
+
+        <!-- @COMPONENT: QRManagement -->
+        <section id="manage" class="mb-12">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-semibold text-gray-900">Manage QR Codes</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    placeholder="Search QR codes..."
+                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                                    data-mock="true"
+                                >
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                            </div>
+                            <button class="flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                                <i class="fas fa-filter mr-2"></i>
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Codes Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Code</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Short URL</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target URL</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clicks</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <!-- @MAP: qrCodes.map(qrCode => ( -->
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
+                                        <i class="fas fa-qrcode text-gray-400"></i>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-mono text-primary" data-bind="qrCode.shortUrl">qr.ly/abc123</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate" data-bind="qrCode.targetUrl">https://example.com/very-long-url-that-gets-truncated</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900" data-bind="qrCode.clicks">1,234</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500" data-bind="qrCode.createdAt">2 days ago</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="text-primary hover:text-blue-700 transition-colors" data-implementation="Edit QR code redirect">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors" data-implementation="Download QR code">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors" data-implementation="Copy short URL">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="text-error hover:text-red-700 transition-colors" data-implementation="Delete QR code">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
+                                        <i class="fas fa-qrcode text-gray-400"></i>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-mono text-primary" data-bind="qrCode.shortUrl">qr.ly/def456</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate" data-bind="qrCode.targetUrl">https://mywebsite.com/product/special-offer</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900" data-bind="qrCode.clicks">856</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500" data-bind="qrCode.createdAt">1 week ago</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="text-primary hover:text-blue-700 transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="text-error hover:text-red-700 transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
+                                        <i class="fas fa-qrcode text-gray-400"></i>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-mono text-primary" data-bind="qrCode.shortUrl">qr.ly/ghi789</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate" data-bind="qrCode.targetUrl">https://docs.google.com/forms/d/e/presentation-feedback</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900" data-bind="qrCode.clicks">42</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500" data-bind="qrCode.createdAt">3 hours ago</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="text-primary hover:text-blue-700 transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="text-error hover:text-red-700 transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- @END_MAP )) -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        Showing <span class="font-medium" data-mock="true">1</span> to <span class="font-medium" data-mock="true">3</span> of <span class="font-medium" data-mock="true">12</span> results
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-500 hover:bg-gray-50 transition-colors" disabled data-mock="true">
+                            Previous
+                        </button>
+                        <button class="px-3 py-1 text-sm bg-primary text-white rounded" data-mock="true">1</button>
+                        <button class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors" data-mock="true">2</button>
+                        <button class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors" data-mock="true">3</button>
+                        <button class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors" data-mock="true">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: QRManagement -->
+
+        <!-- @COMPONENT: Analytics -->
+        <section id="analytics">
+            <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                <!-- Stats Cards -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-qrcode text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total QR Codes</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.totalQRCodes" data-mock="true">24</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-mouse-pointer text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Clicks</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.totalClicks" data-mock="true">3,247</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="fas fa-chart-line text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Avg. Clicks/QR</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.avgClicks" data-mock="true">135</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Charts -->
+            <div class="grid lg:grid-cols-2 gap-6">
+                <!-- Click Trends Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Click Trends (Last 30 Days)</h3>
+                    <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg" data-implementation="Replace with Chart.js or similar charting library">
+                        <div class="text-center text-gray-500">
+                            <i class="fas fa-chart-area text-3xl mb-2"></i>
+                            <p class="text-sm">Chart will be rendered here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Performing QR Codes -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performing QR Codes</h3>
+                    <div class="space-y-4">
+                        <!-- @MAP: topQRCodes.map(qr => ( -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-mock="true">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center mr-3">
+                                    <i class="fas fa-qrcode text-gray-400 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900" data-bind="qr.shortUrl">qr.ly/abc123</p>
+                                    <p class="text-xs text-gray-500" data-bind="qr.targetUrl">example.com</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900" data-bind="qr.clicks">1,234</p>
+                                <p class="text-xs text-success">+12%</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-mock="true">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center mr-3">
+                                    <i class="fas fa-qrcode text-gray-400 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900" data-bind="qr.shortUrl">qr.ly/def456</p>
+                                    <p class="text-xs text-gray-500" data-bind="qr.targetUrl">mywebsite.com</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900" data-bind="qr.clicks">856</p>
+                                <p class="text-xs text-success">+8%</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-mock="true">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center mr-3">
+                                    <i class="fas fa-qrcode text-gray-400 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900" data-bind="qr.shortUrl">qr.ly/ghi789</p>
+                                    <p class="text-xs text-gray-500" data-bind="qr.targetUrl">forms.google.com</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900" data-bind="qr.clicks">542</p>
+                                <p class="text-xs text-success">+5%</p>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: Analytics -->
+    </main>
+
+    <!-- @COMPONENT: EditModal -->
+    <!-- Hidden by default - shown when editing a QR code -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" data-implementation="Modal for editing QR code redirects">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Edit QR Code</h3>
+                    <button class="text-gray-400 hover:text-gray-600" data-implementation="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form data-implementation="Update QR code target URL">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Short URL</label>
+                        <input 
+                            type="text" 
+                            value="qr.ly/abc123" 
+                            disabled 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                            data-mock="true"
+                        >
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Target URL</label>
+                        <input 
+                            type="url" 
+                            value="https://example.com" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            data-mock="true"
+                        >
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" data-implementation="Cancel edit">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors" data-implementation="Save QR code changes">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: EditModal -->
+
+    <script>
+        (function() {
+            // TODO: Implement QR code generation using libraries like qrcode.js
+            // TODO: Implement URL shortening service backend integration
+            // TODO: Implement analytics tracking and chart rendering
+            // TODO: Implement modal toggle functionality
+            // TODO: Implement form validation and error handling
+            // TODO: Implement clipboard copy functionality
+            // TODO: Implement download functionality for QR codes
+            
+            // Mock interactive behaviors for demo purposes
+            document.addEventListener('DOMContentLoaded', function() {
+                // Tab navigation simulation
+                const navLinks = document.querySelectorAll('nav a');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        navLinks.forEach(l => {
+                            l.classList.remove('text-primary', 'border-b-2', 'border-primary', 'pb-1');
+                            l.classList.add('text-gray-500');
+                        });
+                        this.classList.remove('text-gray-500');
+                        this.classList.add('text-primary', 'border-b-2', 'border-primary', 'pb-1');
+                    });
+                });
+                
+                // Input type selector
+                const typeButtons = document.querySelectorAll('[data-mock="true"]').forEach(button => {
+                    if (button.tagName === 'BUTTON' && button.textContent.includes('URL')) {
+                        button.addEventListener('click', function() {
+                            const buttons = this.parentElement.querySelectorAll('button');
+                            buttons.forEach(btn => {
+                                btn.classList.remove('bg-primary', 'text-white');
+                                btn.classList.add('bg-gray-100', 'text-gray-700');
+                            });
+                            this.classList.remove('bg-gray-100', 'text-gray-700');
+                            this.classList.add('bg-primary', 'text-white');
+                        });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
