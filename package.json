@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "vercel-build": "vite build",
+    "vercel-build": "vite build && esbuild api/_server.ts --bundle --platform=node --format=esm --outfile=api/_server.js --alias:@shared=./shared --alias:@=./client/src --external:sharp --external:@neondatabase/serverless --external:ws --external:express --external:passport --external:passport-local --external:passport-google-oauth20 --external:passport-github2 --external:express-session --external:memorystore --external:qrcode --external:multer --external:drizzle-orm --external:drizzle-zod --external:zod --external:nanoid --external:crypto --external:util --external:http --external:fs --external:path",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
