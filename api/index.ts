@@ -1,4 +1,6 @@
-import 'dotenv/config';
+// Vercel Serverless Function entry point
+// NOTE: No dotenv import here — Vercel injects env vars from the dashboard.
+// dotenv is only needed for local dev (server/index.ts handles that).
 import express, { type Request, type Response, type NextFunction } from 'express';
 import { registerRoutes } from '../server/routes';
 
@@ -13,7 +15,7 @@ function ensureSetup(): Promise<void> {
   if (!setupPromise) {
     setupPromise = registerRoutes(app)
       .then(() => {
-        // Error handler must be registered AFTER all routes
+        // Error handler MUST come after all routes
         app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
           const status = err.status || err.statusCode || 500;
           const message = err.message || 'Internal Server Error';
@@ -23,7 +25,7 @@ function ensureSetup(): Promise<void> {
       })
       .catch((err) => {
         console.error('Fatal: failed to register routes:', err);
-        setupPromise = null; // allow retry
+        setupPromise = null;
         throw err;
       });
   }
@@ -35,7 +37,7 @@ export default async function handler(req: Request, res: Response) {
     await ensureSetup();
     app(req, res);
   } catch (err: any) {
-    console.error('Handler boot error:', err);
+    console.error('Boot error:', err);
     res.status(500).json({ message: 'Server failed to start', detail: err?.message });
   }
 }
