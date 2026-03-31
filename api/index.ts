@@ -1,6 +1,41 @@
-// This file is the Vercel serverless function entry point.
-// The real logic lives in _server.ts, which is pre-bundled to _server.js
-// by the vercel-build script (esbuild resolves @shared/* path aliases).
+import 'dotenv/config';
+import express, { type Request, type Response, type NextFunction } from 'express';
+import { registerRoutes } from '../server/routes';
 
-// @ts-ignore – _server.js is generated at build time by vercel-build
-export { default } from './_server.js';
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Initialise routes once on cold start, reuse on warm invocations
+let setupPromise: Promise<void> | null = null;
+
+function ensureSetup(): Promise<void> {
+  if (!setupPromise) {
+    setupPromise = registerRoutes(app)
+      .then(() => {
+        // Error handler must be registered AFTER all routes
+        app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+          const status = err.status || err.statusCode || 500;
+          const message = err.message || 'Internal Server Error';
+          console.error('[error]', message);
+          res.status(status).json({ message });
+        });
+      })
+      .catch((err) => {
+        console.error('Fatal: failed to register routes:', err);
+        setupPromise = null; // allow retry
+        throw err;
+      });
+  }
+  return setupPromise;
+}
+
+export default async function handler(req: Request, res: Response) {
+  try {
+    await ensureSetup();
+    app(req, res);
+  } catch (err: any) {
+    console.error('Handler boot error:', err);
+    res.status(500).json({ message: 'Server failed to start', detail: err?.message });
+  }
+}

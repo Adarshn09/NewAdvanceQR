@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertQrCodeSchema, updateQrCodeSchema } from "@shared/schema";
+import { insertQrCodeSchema, updateQrCodeSchema } from "../shared/schema";
 import QRCode from "qrcode";
 import sharp from "sharp";
 import multer from "multer";

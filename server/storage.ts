@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type QrCode, type InsertQrCode, type OAuthUser, users, qrCodes } from "@shared/schema";
+import { type User, type InsertUser, type QrCode, type InsertQrCode, type OAuthUser, users, qrCodes } from "../shared/schema";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
