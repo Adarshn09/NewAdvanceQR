@@ -4,8 +4,25 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertQrCodeSchema, updateQrCodeSchema } from "../shared/schema";
 import QRCode from "qrcode";
-import sharp from "sharp";
 import multer from "multer";
+
+let sharpModule: any | null = null;
+let sharpLoadErrorLogged = false;
+
+async function getSharp() {
+  if (sharpModule) return sharpModule;
+  try {
+    const imported = await import("sharp");
+    sharpModule = imported.default;
+    return sharpModule;
+  } catch (error) {
+    if (!sharpLoadErrorLogged) {
+      console.error("Sharp is unavailable in this runtime:", error);
+      sharpLoadErrorLogged = true;
+    }
+    return null;
+  }
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -25,6 +42,8 @@ const upload = multer({
 // Helper function to apply QR code styling
 async function applyQrStyle(qrBuffer: Buffer, style: string): Promise<Buffer> {
   try {
+    const sharp = await getSharp();
+    if (!sharp) return qrBuffer;
     const image = sharp(qrBuffer);
     
     if (style === "rounded") {
@@ -57,6 +76,8 @@ async function applyQrStyle(qrBuffer: Buffer, style: string): Promise<Buffer> {
 // Helper function to add logo to QR code
 async function addLogoToQr(qrBuffer: Buffer, logoSource: string, qrSize: number): Promise<Buffer> {
   try {
+    const sharp = await getSharp();
+    if (!sharp) return qrBuffer;
     const logoSize = Math.floor(qrSize * 0.2); // Logo is 20% of QR size
     const position = Math.floor((qrSize - logoSize) / 2);
     
@@ -488,6 +509,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload logo for QR code
   app.post("/api/upload-logo", requireAuth, upload.single('logo'), async (req: any, res) => {
     try {
+      const sharp = await getSharp();
+      if (!sharp) {
+        return res.status(503).json({ message: "Image processing is unavailable right now." });
+      }
       if (!req.file) {
         return res.status(400).json({ message: "No logo file provided" });
       }

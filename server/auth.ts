@@ -65,15 +65,25 @@ export function setupAuth(app: Express) {
   );
 
   // ── Google OAuth Strategy ────────────────────────────────────────────────────
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  const googleOAuthConfigured = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+  );
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (googleOAuthConfigured) {
     passport.use(
       new GoogleStrategy(
         {
-          clientID: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          clientID: googleClientId!,
+          clientSecret: googleClientSecret!,
           callbackURL: "/auth/google/callback",
         },
-        async (_accessToken, _refreshToken, profile, done) => {
+        async (
+          _accessToken: string,
+          _refreshToken: string,
+          profile: { id: string; displayName?: string; emails?: Array<{ value?: string }> },
+          done: (error: Error | null, user?: any) => void,
+        ) => {
           try {
             // Use display name or email prefix as username
             const username =
@@ -96,12 +106,17 @@ export function setupAuth(app: Express) {
   }
 
   // ── GitHub OAuth Strategy ────────────────────────────────────────────────────
-  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  const githubOAuthConfigured = Boolean(
+    process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET,
+  );
+  const githubClientId = process.env.GITHUB_CLIENT_ID;
+  const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+  if (githubOAuthConfigured) {
     passport.use(
       new GitHubStrategy(
         {
-          clientID: process.env.GITHUB_CLIENT_ID,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          clientID: githubClientId!,
+          clientSecret: githubClientSecret!,
           callbackURL: "/auth/github/callback",
         },
         async (_accessToken: string, _refreshToken: string, profile: any, done: any) => {
@@ -184,38 +199,42 @@ export function setupAuth(app: Express) {
   });
 
   // ── Google OAuth routes ───────────────────────────────────────────────────────
-  app.get(
-    "/auth/google",
-    (req, res, next) => {
-      if (!process.env.GOOGLE_CLIENT_ID) {
-        return res.status(503).json({ message: "Google OAuth is not configured on this server." });
-      }
-      next();
-    },
-    passport.authenticate("google", { scope: ["profile", "email"] }),
-  );
-
-  app.get(
-    "/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/?error=google_auth_failed" }),
-    (_req, res) => res.redirect("/dashboard"),
-  );
+  if (googleOAuthConfigured) {
+    app.get(
+      "/auth/google",
+      passport.authenticate("google", { scope: ["profile", "email"] }),
+    );
+    app.get(
+      "/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/?error=google_auth_failed" }),
+      (_req, res) => res.redirect("/dashboard"),
+    );
+  } else {
+    app.get("/auth/google", (_req, res) =>
+      res.status(503).json({ message: "Google OAuth is not configured on this server." }),
+    );
+    app.get("/auth/google/callback", (_req, res) =>
+      res.redirect("/?error=google_oauth_not_configured"),
+    );
+  }
 
   // ── GitHub OAuth routes ───────────────────────────────────────────────────────
-  app.get(
-    "/auth/github",
-    (req, res, next) => {
-      if (!process.env.GITHUB_CLIENT_ID) {
-        return res.status(503).json({ message: "GitHub OAuth is not configured on this server." });
-      }
-      next();
-    },
-    passport.authenticate("github", { scope: ["user:email"] }),
-  );
-
-  app.get(
-    "/auth/github/callback",
-    passport.authenticate("github", { failureRedirect: "/?error=github_auth_failed" }),
-    (_req, res) => res.redirect("/dashboard"),
-  );
+  if (githubOAuthConfigured) {
+    app.get(
+      "/auth/github",
+      passport.authenticate("github", { scope: ["user:email"] }),
+    );
+    app.get(
+      "/auth/github/callback",
+      passport.authenticate("github", { failureRedirect: "/?error=github_auth_failed" }),
+      (_req, res) => res.redirect("/dashboard"),
+    );
+  } else {
+    app.get("/auth/github", (_req, res) =>
+      res.status(503).json({ message: "GitHub OAuth is not configured on this server." }),
+    );
+    app.get("/auth/github/callback", (_req, res) =>
+      res.redirect("/?error=github_oauth_not_configured"),
+    );
+  }
 }
