@@ -1,11 +1,7 @@
-import { type User, type InsertUser, type QrCode, type InsertQrCode, type OAuthUser, users, qrCodes } from "../shared/schema";
+import { type User, type InsertUser, type QrCode, type InsertQrCode, type OAuthUser, users, qrCodes } from "../shared/schema.js";
 import { randomUUID } from "crypto";
-import session from "express-session";
-import createMemoryStore from "memorystore";
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, sql, and } from "drizzle-orm";
-
-const MemoryStore = createMemoryStore(session);
 
 // Interface for storage operations
 export interface IStorage {
@@ -22,22 +18,18 @@ export interface IStorage {
   updateQrCodeClickCount(id: string): Promise<void>;
   updateQrCodeContent(id: string, userId: string, content: string): Promise<QrCode | undefined>;
   deleteQrCode(id: string, userId: string): Promise<boolean>;
-  sessionStore: any;
+  sessionStore?: any;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private qrCodes: Map<string, QrCode>;
   private shortCodeToQrId: Map<string, string>;
-  public sessionStore: any;
 
   constructor() {
     this.users = new Map();
     this.qrCodes = new Map();
     this.shortCodeToQrId = new Map();
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    });
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -166,13 +158,7 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  public sessionStore: any;
-
-  constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    });
-  }
+  constructor() {}
 
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

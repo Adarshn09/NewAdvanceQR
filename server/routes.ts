@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
-import { storage } from "./storage";
-import { insertQrCodeSchema, updateQrCodeSchema } from "../shared/schema";
+import { setupAuth } from "./auth.js";
+import { storage } from "./storage.js";
+import { insertQrCodeSchema, updateQrCodeSchema } from "../shared/schema.js";
 import QRCode from "qrcode";
 import multer from "multer";
 

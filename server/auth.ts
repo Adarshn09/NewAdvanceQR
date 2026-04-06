@@ -6,8 +6,8 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "../shared/schema";
+import { storage } from "./storage.js";
+import { User as SelectUser } from "../shared/schema.js";
 
 declare global {
   namespace Express {
@@ -35,11 +35,11 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "your-secret-key-here-change-in-production",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: "lax",
     },
   };
 
