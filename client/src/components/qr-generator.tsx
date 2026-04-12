@@ -18,6 +18,12 @@ export default function QrGenerator() {
   const [qrType, setQrType] = useState("url");
   const [qrData, setQrData] = useState("");
   const [generatedQr, setGeneratedQr] = useState<QrCodeType | null>(null);
+
+  // WiFi-specific fields
+  const [wifiSsid, setWifiSsid] = useState("");
+  const [wifiPassword, setWifiPassword] = useState("");
+  const [wifiSecurity, setWifiSecurity] = useState("WPA");
+  const [showWifiPassword, setShowWifiPassword] = useState(false);
   
   // Customization options
   const [foregroundColor, setForegroundColor] = useState("#000000");
@@ -86,6 +92,37 @@ export default function QrGenerator() {
   });
 
   const handleGenerate = async () => {
+    // WiFi validation
+    if (qrType === "wifi") {
+      if (!wifiSsid.trim()) {
+        toast({
+          title: "Network name required",
+          description: "Please enter the WiFi network name (SSID).",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Encode WiFi data as JSON so colons in SSID/password don't break parsing
+      const wifiContent = JSON.stringify({
+        ssid: wifiSsid.trim(),
+        password: wifiPassword,
+        security: wifiSecurity,
+      });
+      createQrMutation.mutate({
+        type: qrType,
+        content: wifiContent,
+        foregroundColor,
+        backgroundColor,
+        size: size[0],
+        logoData: logoData || undefined,
+        style,
+        errorCorrection,
+        margin: margin[0],
+        enableTracking: "false",
+      });
+      return;
+    }
+
     if (!qrData.trim()) {
       toast({
         title: "Input required",
@@ -157,10 +194,62 @@ export default function QrGenerator() {
                 {qrType === "email" && "Email Address"}
                 {qrType === "phone" && "Phone Number"}
                 {qrType === "sms" && "SMS Message"}
-                {qrType === "wifi" && "WiFi Details"}
+                {qrType === "wifi" && "WiFi Network Details"}
                 {qrType === "vcard" && "Contact Information"}
               </Label>
-              {qrType === "text" || qrType === "sms" || qrType === "vcard" ? (
+
+              {/* WiFi-specific form */}
+              {qrType === "wifi" ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="wifi-ssid" className="text-sm text-muted-foreground">Network Name (SSID) *</Label>
+                    <Input
+                      id="wifi-ssid"
+                      value={wifiSsid}
+                      onChange={(e) => setWifiSsid(e.target.value)}
+                      placeholder="e.g. MyHomeWiFi"
+                      data-testid="input-wifi-ssid"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="wifi-password" className="text-sm text-muted-foreground">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="wifi-password"
+                        type={showWifiPassword ? "text" : "password"}
+                        value={wifiPassword}
+                        onChange={(e) => setWifiPassword(e.target.value)}
+                        placeholder="Leave blank if open network"
+                        data-testid="input-wifi-password"
+                        className="pr-20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowWifiPassword(!showWifiPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showWifiPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="wifi-security" className="text-sm text-muted-foreground">Security Type</Label>
+                    <Select value={wifiSecurity} onValueChange={setWifiSecurity}>
+                      <SelectTrigger id="wifi-security" data-testid="select-wifi-security">
+                        <SelectValue placeholder="Select security type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="WPA">WPA / WPA2 / WPA3 (most common)</SelectItem>
+                        <SelectItem value="WEP">WEP (older)</SelectItem>
+                        <SelectItem value="nopass">None (open network)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    💡 Most home routers use <strong>WPA/WPA2</strong>. Check your router label if unsure.
+                  </p>
+                </div>
+              ) : qrType === "text" || qrType === "sms" || qrType === "vcard" ? (
                 <Textarea
                   id="qr-data"
                   value={qrData}
@@ -182,7 +271,6 @@ export default function QrGenerator() {
                     qrType === "url" ? "https://example.com" :
                     qrType === "email" ? "user@example.com" :
                     qrType === "phone" ? "+1234567890" :
-                    qrType === "wifi" ? "SSID:password:security" :
                     "Enter data..."
                   }
                   data-testid="input-qr-data"

@@ -282,16 +282,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For other types, use tracking URL for analytics
       if (qrCode.type === "wifi") {
         // WiFi format: WIFI:T:WPA;S:NetworkName;P:Password;H:false;;
-        // Input format expected: "NetworkName:Password:Security"
-        const wifiParts = qrCode.content.split(':');
-        if (wifiParts.length >= 2) {
-          const networkName = wifiParts[0];
-          const password = wifiParts[1];
-          const security = wifiParts[2] || 'WPA';
-          qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
-        } else {
-          qrContent = qrCode.content;
+        // Content stored as JSON: {ssid, password, security} (new format)
+        // or legacy colon-format: "NetworkName:Password:Security"
+        let networkName: string, password: string, security: string;
+        try {
+          const parsed = JSON.parse(qrCode.content);
+          networkName = parsed.ssid || 'Unknown';
+          password = parsed.password || '';
+          security = parsed.security || 'WPA';
+        } catch {
+          // Legacy fallback: SSID:Password:Security
+          const wifiParts = qrCode.content.split(':');
+          networkName = wifiParts[0] || 'Unknown';
+          password = wifiParts[1] || '';
+          security = wifiParts[2] || 'WPA';
         }
+        qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
         // vCard format - if not already formatted, wrap in VCARD structure
         if (!qrCode.content.includes('BEGIN:VCARD')) {
@@ -373,15 +379,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Always use direct content for this endpoint
       if (qrCode.type === "wifi") {
-        const wifiParts = qrCode.content.split(':');
-        if (wifiParts.length >= 2) {
-          const networkName = wifiParts[0];
-          const password = wifiParts[1];
-          const security = wifiParts[2] || 'WPA';
-          qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
-        } else {
-          qrContent = qrCode.content;
+        let networkName: string, password: string, security: string;
+        try {
+          const parsed = JSON.parse(qrCode.content);
+          networkName = parsed.ssid || 'Unknown';
+          password = parsed.password || '';
+          security = parsed.security || 'WPA';
+        } catch {
+          const wifiParts = qrCode.content.split(':');
+          networkName = wifiParts[0] || 'Unknown';
+          password = wifiParts[1] || '';
+          security = wifiParts[2] || 'WPA';
         }
+        qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
         if (!qrCode.content.includes('BEGIN:VCARD')) {
           qrContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${qrCode.content}\nEND:VCARD`;
@@ -450,15 +460,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Always use tracking URLs for this endpoint
       if (qrCode.type === "wifi") {
-        const wifiParts = qrCode.content.split(':');
-        if (wifiParts.length >= 2) {
-          const networkName = wifiParts[0];
-          const password = wifiParts[1];
-          const security = wifiParts[2] || 'WPA';
-          qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
-        } else {
-          qrContent = qrCode.content;
+        let networkName: string, password: string, security: string;
+        try {
+          const parsed = JSON.parse(qrCode.content);
+          networkName = parsed.ssid || 'Unknown';
+          password = parsed.password || '';
+          security = parsed.security || 'WPA';
+        } catch {
+          const wifiParts = qrCode.content.split(':');
+          networkName = wifiParts[0] || 'Unknown';
+          password = wifiParts[1] || '';
+          security = wifiParts[2] || 'WPA';
         }
+        qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
         if (!qrCode.content.includes('BEGIN:VCARD')) {
           qrContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${qrCode.content}\nEND:VCARD`;
@@ -574,10 +588,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case "wifi": {
           // WiFi QR codes should show instructions
-          const wifiParts = qrCode.content.split(':');
-          const networkName = escapeHtml(wifiParts[0] || 'Unknown Network');
-          const password = escapeHtml(wifiParts[1] || '');
-          const security = escapeHtml(wifiParts[2] || 'WPA');
+          let networkName: string, password: string, security: string;
+          try {
+            const parsed = JSON.parse(qrCode.content);
+            networkName = escapeHtml(parsed.ssid || 'Unknown Network');
+            password = escapeHtml(parsed.password || '');
+            security = escapeHtml(parsed.security || 'WPA');
+          } catch {
+            const wifiParts = qrCode.content.split(':');
+            networkName = escapeHtml(wifiParts[0] || 'Unknown Network');
+            password = escapeHtml(wifiParts[1] || '');
+            security = escapeHtml(wifiParts[2] || 'WPA');
+          }
           return res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
