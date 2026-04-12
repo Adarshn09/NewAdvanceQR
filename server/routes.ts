@@ -572,19 +572,391 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "sms":
           redirectUrl = `sms:${qrCode.content}`;
           break;
-        case "wifi":
+        case "wifi": {
           // WiFi QR codes should show instructions
           const wifiParts = qrCode.content.split(':');
           const networkName = escapeHtml(wifiParts[0] || 'Unknown Network');
           const password = escapeHtml(wifiParts[1] || '');
-          return res.send(`<html><body><h1>WiFi Network</h1><p><strong>Network:</strong> ${networkName}</p><p><strong>Password:</strong> ${password}</p><p>Scan this QR code with your device to connect automatically.</p></body></html>`);
-        case "vcard":
-          // vCard content should be displayed
-          return res.send(`<html><body><h1>Contact Information</h1><pre>${escapeHtml(qrCode.content)}</pre></body></html>`);
+          const security = escapeHtml(wifiParts[2] || 'WPA');
+          return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WiFi Network – ${networkName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 480px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 28px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 32px 64px rgba(0,0,0,0.4);
+      overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:none; } }
+    .hero {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      padding: 40px 36px 32px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: -40%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+    .wifi-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; font-size: 36px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .hero h1 { color: #fff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .hero p { color: rgba(255,255,255,0.75); font-size: 14px; margin-top: 6px; }
+    .body { padding: 32px 36px; }
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      color: rgba(255,255,255,0.45); margin-bottom: 8px;
+    }
+    .field-value {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 14px 18px;
+    }
+    .field-value span { color: #fff; font-size: 17px; font-weight: 600; word-break: break-all; }
+    .copy-btn {
+      background: rgba(99,102,241,0.3); border: 1px solid rgba(99,102,241,0.5);
+      color: #a5b4fc; border-radius: 10px; padding: 7px 14px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .copy-btn:hover { background: rgba(99,102,241,0.5); color: #fff; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80; border-radius: 999px; padding: 4px 12px;
+      font-size: 12px; font-weight: 600;
+    }
+    .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 0 24px; }
+    .tip {
+      background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 14px; padding: 16px 20px;
+      color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.6;
+    }
+    .tip strong { color: #a5b4fc; }
+    .footer { padding: 16px 36px 28px; text-align: center; }
+    .footer a {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; text-decoration: none; padding: 13px 32px;
+      border-radius: 14px; font-weight: 700; font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+    }
+    .footer a:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99,102,241,0.5); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <div class="wifi-icon">📶</div>
+      <h1>WiFi Network</h1>
+      <p>Tap to connect instantly</p>
+    </div>
+    <div class="body">
+      <div class="field">
+        <label>Network Name (SSID)</label>
+        <div class="field-value">
+          <span id="ssid">${networkName}</span>
+          <button class="copy-btn" onclick="copy('ssid', this)">Copy</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="field-value">
+          <span id="pwd">${password || '(No password)'}</span>
+          ${password ? '<button class="copy-btn" onclick="copy(\'pwd\', this)">Copy</button>' : ''}
+        </div>
+      </div>
+      <div class="field">
+        <label>Security</label>
+        <div class="field-value"><span><span class="badge">🔒 ${security}</span></span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="tip"><strong>💡 Tip:</strong> Most modern phones can connect by scanning the QR code directly from the camera app – no need to type the password.</div>
+    </div>
+    <div class="footer">
+      <a href="/">← Back to QR Generator</a>
+    </div>
+  </div>
+  <script>
+    function copy(id, btn) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.style.background = 'rgba(34,197,94,0.3)';
+        btn.style.borderColor = 'rgba(34,197,94,0.5)';
+        btn.style.color = '#4ade80';
+        setTimeout(() => { btn.textContent = orig; btn.style = ''; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>`);
+        }
+        case "vcard": {
+          // Parse vCard fields for a nice display
+          const vcardContent = qrCode.content;
+          const getField = (key: string) => {
+            const match = vcardContent.match(new RegExp(key + '[^:]*:([^\r\n]+)', 'i'));
+            return match ? escapeHtml(match[1].trim()) : '';
+          };
+          const fullName = getField('FN') || getField('N') || 'Contact';
+          const email = getField('EMAIL');
+          const phone = getField('TEL');
+          const org = getField('ORG');
+          const title = getField('TITLE');
+          const url = getField('URL');
+          const address = getField('ADR').replace(/;/g, ', ').replace(/^,\s*/, '');
+          const renderRow = (icon: string, label: string, value: string, href?: string) =>
+            value ? `<div class="row"><div class="row-icon">${icon}</div><div class="row-body"><div class="row-label">${label}</div><div class="row-value">${href ? `<a href="${href}" class="link">${value}</a>` : value}</div></div></div>` : '';
+          return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${fullName} – Contact Card</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 440px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 28px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:none; } }
+    .hero {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      padding: 40px 32px 36px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 25% 0%, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+    .avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      border: 3px solid rgba(255,255,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px; margin: 0 auto 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .hero h1 { color: #fff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .hero .sub { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 4px; }
+    .body { padding: 24px 28px 8px; }
+    .row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .row:last-child { border-bottom: none; }
+    .row-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .row-body { flex: 1; min-width: 0; }
+    .row-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+    .row-value { font-size: 15px; font-weight: 500; color: #e2e8f0; word-break: break-all; }
+    .link { color: #818cf8; text-decoration: none; }
+    .link:hover { color: #a5b4fc; text-decoration: underline; }
+    .actions { padding: 20px 28px 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 120px;
+      border: none; border-radius: 14px; padding: 14px 20px;
+      font-family: inherit; font-weight: 700; font-size: 14px;
+      cursor: pointer; text-align: center; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s; display: block;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(79,70,229,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(79,70,229,0.55); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.13); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <div class="avatar">👤</div>
+      <h1>${fullName}</h1>
+      ${title || org ? `<p class="sub">${[title, org].filter(Boolean).join(' · ')}</p>` : ''}
+    </div>
+    <div class="body">
+      ${renderRow('📞', 'Phone', phone, phone ? `tel:${phone}` : undefined)}
+      ${renderRow('✉️', 'Email', email, email ? `mailto:${email}` : undefined)}
+      ${renderRow('🏢', 'Organization', org)}
+      ${renderRow('💼', 'Title', title)}
+      ${renderRow('🌐', 'Website', url, url)}
+      ${renderRow('📍', 'Address', address)}
+    </div>
+    <div class="actions">
+      ${phone ? `<a class="btn btn-primary" href="tel:${phone}">📞 Call</a>` : ''}
+      ${email ? `<a class="btn btn-primary" href="mailto:${email}">✉️ Email</a>` : ''}
+      <a class="btn btn-secondary" href="/">← Home</a>
+    </div>
+  </div>
+</body>
+</html>`);
+        }
         case "text":
-        default:
-          // For text and other types, show the content
-          return res.send(`<html><body><h1>QR Code Content</h1><p>${escapeHtml(qrCode.content)}</p></body></html>`);
+        default: {
+          // For text and other types, show the content nicely
+          return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Message</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 540px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:none; } }
+    .hero {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      padding: 36px 32px 28px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.18) 0%, transparent 55%);
+    }
+    .icon-wrap {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px; font-size: 32px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .hero h1 { color: #fff; font-size: 22px; font-weight: 800; }
+    .hero p { color: rgba(255,255,255,0.72); font-size: 13px; margin-top: 5px; }
+    .body { padding: 28px 32px; }
+    .message-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-left: 4px solid #6366f1;
+      border-radius: 16px;
+      padding: 22px 24px;
+      color: #e2e8f0;
+      font-size: 16px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .actions { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 130px;
+      border: none; border-radius: 14px; padding: 14px 20px;
+      font-family: inherit; font-weight: 700; font-size: 14px;
+      cursor: pointer; text-align: center; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s; display: block;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff; box-shadow: 0 8px 24px rgba(14,165,233,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(14,165,233,0.5); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.13); }
+    .footer { padding: 0 32px 24px; text-align: center; color: rgba(255,255,255,0.25); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <div class="icon-wrap">✉️</div>
+      <h1>QR Code Message</h1>
+      <p>Scanned from your QR code</p>
+    </div>
+    <div class="body">
+      <div class="message-box" id="msg">${escapeHtml(qrCode.content)}</div>
+      <div class="actions">
+        <button class="btn btn-primary" id="copyBtn" onclick="copyMsg()">📋 Copy Text</button>
+        <a class="btn btn-secondary" href="/">← Home</a>
+      </div>
+    </div>
+    <div class="footer">Powered by AdvanceQR</div>
+  </div>
+  <script>
+    function copyMsg() {
+      const text = document.getElementById('msg').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✓ Copied!';
+        btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+        btn.style.boxShadow = '0 8px 24px rgba(34,197,94,0.4)';
+        setTimeout(() => { btn.textContent = '📋 Copy Text'; btn.style = ''; }, 2500);
+      });
+    }
+  </script>
+</body>
+</html>`);
+        }
       }
 
       res.redirect(redirectUrl);
