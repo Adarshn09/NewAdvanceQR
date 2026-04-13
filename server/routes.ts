@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const org = getField('ORG');
           const title = getField('TITLE');
           const url = getField('URL');
-          const address = getField('ADR').replace(/;/g, ', ').replace(/^,\s*/, '');
+          const address = getField('ADR').split(';').map((s: string) => s.trim()).filter(Boolean).join(', ');
           const renderRow = (icon: string, label: string, value: string, href?: string) =>
             value ? `<div class="row"><div class="row-icon">${icon}</div><div class="row-body"><div class="row-label">${label}</div><div class="row-value">${href ? `<a href="${href}" class="link">${value}</a>` : value}</div></div></div>` : '';
           return res.send(`<!DOCTYPE html>
@@ -857,11 +857,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ${renderRow('📍', 'Address', address)}
     </div>
     <div class="actions">
+      <button class="btn btn-primary" onclick="saveContact()">💾 Save Contact</button>
       ${phone ? `<a class="btn btn-primary" href="tel:${phone}">📞 Call</a>` : ''}
       ${email ? `<a class="btn btn-primary" href="mailto:${email}">✉️ Email</a>` : ''}
       <a class="btn btn-secondary" href="/">← Home</a>
     </div>
   </div>
+  <script>
+    const vcfData = ${JSON.stringify(vcardContent)};
+    function saveContact() {
+      const blob = new Blob([vcfData], { type: 'text/vcard;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '${fullName.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'contact'}.vcf';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>`);
         }

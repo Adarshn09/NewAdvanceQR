@@ -24,6 +24,15 @@ export default function QrGenerator() {
   const [wifiPassword, setWifiPassword] = useState("");
   const [wifiSecurity, setWifiSecurity] = useState("WPA");
   const [showWifiPassword, setShowWifiPassword] = useState(false);
+
+  // vCard-specific fields
+  const [vcardName, setVcardName] = useState("");
+  const [vcardPhone, setVcardPhone] = useState("");
+  const [vcardEmail, setVcardEmail] = useState("");
+  const [vcardOrg, setVcardOrg] = useState("");
+  const [vcardTitle, setVcardTitle] = useState("");
+  const [vcardUrl, setVcardUrl] = useState("");
+  const [vcardAddress, setVcardAddress] = useState("");
   
   // Customization options
   const [foregroundColor, setForegroundColor] = useState("#000000");
@@ -117,6 +126,46 @@ export default function QrGenerator() {
         logoData: logoData || undefined,
         style,
         errorCorrection,
+        margin: margin[0],
+        enableTracking: "false",
+      });
+      return;
+    }
+
+    // vCard validation and building
+    if (qrType === "vcard") {
+      if (!vcardName.trim()) {
+        toast({
+          title: "Name required",
+          description: "Please enter at least a name for the contact card.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Build a valid vCard 3.0 string with CRLF line endings
+      const CRLF = "\r\n";
+      const lines: string[] = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `FN:${vcardName.trim()}`,
+      ];
+      if (vcardPhone.trim()) lines.push(`TEL;TYPE=CELL:${vcardPhone.trim()}`);
+      if (vcardEmail.trim()) lines.push(`EMAIL:${vcardEmail.trim()}`);
+      if (vcardOrg.trim()) lines.push(`ORG:${vcardOrg.trim()}`);
+      if (vcardTitle.trim()) lines.push(`TITLE:${vcardTitle.trim()}`);
+      if (vcardUrl.trim()) lines.push(`URL:${vcardUrl.trim()}`);
+      if (vcardAddress.trim()) lines.push(`ADR:;;${vcardAddress.trim()};;;`);
+      lines.push("END:VCARD");
+      const vcardContent = lines.join(CRLF);
+      createQrMutation.mutate({
+        type: qrType,
+        content: vcardContent,
+        foregroundColor,
+        backgroundColor,
+        size: size[0],
+        logoData: logoData || undefined,
+        style,
+        errorCorrection: "H", // High error correction for vCards
         margin: margin[0],
         enableTracking: "false",
       });
@@ -249,15 +298,93 @@ export default function QrGenerator() {
                     💡 Most home routers use <strong>WPA/WPA2</strong>. Check your router label if unsure.
                   </p>
                 </div>
-              ) : qrType === "text" || qrType === "sms" || qrType === "vcard" ? (
+              ) : qrType === "vcard" ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="vcard-name" className="text-sm text-muted-foreground">Full Name *</Label>
+                    <Input
+                      id="vcard-name"
+                      value={vcardName}
+                      onChange={(e) => setVcardName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      data-testid="input-vcard-name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vcard-phone" className="text-sm text-muted-foreground">Phone Number</Label>
+                    <Input
+                      id="vcard-phone"
+                      value={vcardPhone}
+                      onChange={(e) => setVcardPhone(e.target.value)}
+                      placeholder="e.g. +1234567890"
+                      data-testid="input-vcard-phone"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vcard-email" className="text-sm text-muted-foreground">Email Address</Label>
+                    <Input
+                      id="vcard-email"
+                      type="email"
+                      value={vcardEmail}
+                      onChange={(e) => setVcardEmail(e.target.value)}
+                      placeholder="e.g. john@example.com"
+                      data-testid="input-vcard-email"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="vcard-org" className="text-sm text-muted-foreground">Organization</Label>
+                      <Input
+                        id="vcard-org"
+                        value={vcardOrg}
+                        onChange={(e) => setVcardOrg(e.target.value)}
+                        placeholder="Company name"
+                        data-testid="input-vcard-org"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="vcard-title" className="text-sm text-muted-foreground">Job Title</Label>
+                      <Input
+                        id="vcard-title"
+                        value={vcardTitle}
+                        onChange={(e) => setVcardTitle(e.target.value)}
+                        placeholder="e.g. CEO"
+                        data-testid="input-vcard-title"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vcard-url" className="text-sm text-muted-foreground">Website</Label>
+                    <Input
+                      id="vcard-url"
+                      value={vcardUrl}
+                      onChange={(e) => setVcardUrl(e.target.value)}
+                      placeholder="https://example.com"
+                      data-testid="input-vcard-url"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vcard-address" className="text-sm text-muted-foreground">Address</Label>
+                    <Input
+                      id="vcard-address"
+                      value={vcardAddress}
+                      onChange={(e) => setVcardAddress(e.target.value)}
+                      placeholder="e.g. 123 Main St, New York, NY"
+                      data-testid="input-vcard-address"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    📇 Fill in the contact details. Only <strong>Full Name</strong> is required.
+                  </p>
+                </div>
+              ) : qrType === "text" || qrType === "sms" ? (
                 <Textarea
                   id="qr-data"
                   value={qrData}
                   onChange={(e) => setQrData(e.target.value)}
                   placeholder={
                     qrType === "text" ? "Enter your text content..." :
-                    qrType === "sms" ? "Enter SMS message..." :
-                    "Enter contact details..."
+                    "Enter SMS message..."
                   }
                   rows={4}
                   data-testid="textarea-qr-data"
