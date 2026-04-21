@@ -215,7 +215,7 @@ export default function Dashboard() {
           </div>
           <div className="mt-8 pt-8 border-t text-center">
             <p className="text-sm text-muted-foreground">
-              © 2024 QR Generator Pro. Professional QR code generator for personal and commercial use.
+              © 2026 QR Generator Pro. Professional QR code generator for personal and commercial use.
             </p>
           </div>
         </div>

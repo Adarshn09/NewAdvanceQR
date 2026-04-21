@@ -9,8 +9,12 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   getUserByGithubId(githubId: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertOAuthUser(profile: OAuthUser): Promise<User>;
+  setResetToken(userId: string, token: string, expiry: Date): Promise<void>;
+  clearResetToken(userId: string): Promise<void>;
+  updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
   createQrCode(qrCode: InsertQrCode): Promise<QrCode>;
   getUserQrCodes(userId: string): Promise<QrCode[]>;
   getQrCode(id: string): Promise<QrCode | undefined>;
@@ -52,7 +56,15 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id, googleId: null, githubId: null };
+    const user: User = {
+      ...insertUser,
+      id,
+      email: insertUser.email || null,
+      googleId: null,
+      githubId: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+    };
     this.users.set(id, user);
     return user;
   }
@@ -65,7 +77,16 @@ export class MemStorage implements IStorage {
     if (existing) return existing;
     // Create new OAuth user (no password)
     const id = randomUUID();
-    const user: User = { id, username: profile.username, password: null, googleId: profile.googleId ?? null, githubId: profile.githubId ?? null };
+    const user: User = {
+      id,
+      username: profile.username,
+      email: profile.email ?? null,
+      password: null,
+      googleId: profile.googleId ?? null,
+      githubId: profile.githubId ?? null,
+      resetToken: null,
+      resetTokenExpiry: null,
+    };
     this.users.set(id, user);
     return user;
   }
@@ -141,6 +162,36 @@ export class MemStorage implements IStorage {
       return true;
     }
     return false;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.resetToken === token);
+  }
+
+  async setResetToken(userId: string, token: string, expiry: Date): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.resetToken = token;
+      user.resetTokenExpiry = expiry;
+      this.users.set(userId, user);
+    }
+  }
+
+  async clearResetToken(userId: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.resetToken = null;
+      user.resetTokenExpiry = null;
+      this.users.set(userId, user);
+    }
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.password = hashedPassword;
+      this.users.set(userId, user);
+    }
   }
 
   private generateShortCode(): string {
@@ -255,6 +306,32 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(qrCodes.id, id), eq(qrCodes.userId, userId)))
       .returning();
     return result.length > 0;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.resetToken, token));
+    return user || undefined;
+  }
+
+  async setResetToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({ resetToken: token, resetTokenExpiry: expiry })
+      .where(eq(users.id, userId));
+  }
+
+  async clearResetToken(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ resetToken: null, resetTokenExpiry: null })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
   }
 
   private async generateShortCode(): Promise<string> {

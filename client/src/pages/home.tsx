@@ -242,7 +242,7 @@ export default function HomePage() {
           </div>
           
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 QR Generator Pro. All rights reserved.</p>
+            <p>&copy; 2026 QR Generator Pro. All rights reserved.</p>
           </div>
         </div>
       </footer>

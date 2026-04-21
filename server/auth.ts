@@ -7,6 +7,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage.js";
+import { sendMail, buildPasswordResetEmail } from "./email.js";
 import { User as SelectUser } from "../shared/schema.js";
 
 declare global {
@@ -237,4 +238,84 @@ export function setupAuth(app: Express) {
       res.redirect("/?error=github_oauth_not_configured"),
     );
   }
+
+  // ── Forgot Password ───────────────────────────────────────────────────────────
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      const genericOk = { message: "If that account exists and has an email address, a reset link has been sent." };
+
+      // Guard: user must exist and have a local password (OAuth users can't reset this way)
+      if (!user || !user.password) {
+        return res.status(200).json(genericOk);
+      }
+
+      // Guard: user must have an email address on file
+      if (!user.email) {
+        // In dev, surface a clearer message; in prod keep it generic
+        const isDev = process.env.NODE_ENV !== "production";
+        return res.status(200).json(
+          isDev
+            ? { message: "That account has no email address. Add one in account settings before resetting your password." }
+            : genericOk
+        );
+      }
+
+      // Generate a secure 32-byte token valid for 1 hour
+      const token = randomBytes(32).toString("hex");
+      const expiry = new Date(Date.now() + 60 * 60 * 1000);
+      await storage.setResetToken(user.id, token, expiry);
+
+      const baseUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 5000}`;
+      const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+      // ── Send the email ──────────────────────────────────────────────────────
+      const { subject, text, html } = buildPasswordResetEmail(resetUrl, user.username);
+      await sendMail({ to: user.email, subject, text, html });
+      // ───────────────────────────────────────────────────────────────────────
+
+      const isDev = process.env.NODE_ENV !== "production";
+      return res.status(200).json({
+        ...genericOk,
+        ...(isDev && { resetUrl }), // only exposed in dev so the flow can be tested without email
+      });
+    } catch (error) {
+      console.error("[forgot-password]", error);
+      res.status(500).json({ message: "Something went wrong" });
+    }
+  });
+
+  // ── Reset Password ────────────────────────────────────────────────────────────
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+      if (!user || !user.resetTokenExpiry) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      if (new Date() > user.resetTokenExpiry) {
+        await storage.clearResetToken(user.id);
+        return res.status(400).json({ message: "Reset token has expired. Please request a new one." });
+      }
+
+      const hashed = await hashPassword(password);
+      await storage.updateUserPassword(user.id, hashed);
+      await storage.clearResetToken(user.id);
+
+      return res.status(200).json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("[reset-password]", error);
+      res.status(500).json({ message: "Something went wrong" });
+    }
+  });
 }

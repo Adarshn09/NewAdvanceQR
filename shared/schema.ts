@@ -6,9 +6,12 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password"),           // nullable for OAuth users
+  email: text("email").unique(),              // optional but required for password reset
+  password: text("password"),                 // nullable for OAuth users
   googleId: text("google_id").unique(),
   githubId: text("github_id").unique(),
+  resetToken: text("reset_token"),            // password-reset token (nullable)
+  resetTokenExpiry: timestamp("reset_token_expiry"), // expiry timestamp (nullable)
 });
 
 export const qrCodes = pgTable("qr_codes", {
@@ -51,11 +54,15 @@ const strongPassword = z
   });
 
 export const insertUserSchema = createInsertSchema(users)
-  .pick({ username: true, password: true })
-  .extend({ password: strongPassword });
+  .pick({ username: true, password: true, email: true })
+  .extend({
+    password: strongPassword,
+    email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  });
 
 export const oauthUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   googleId: true,
   githubId: true,
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { QrCode, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -99,6 +99,7 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       confirmPassword: "",
     },
@@ -197,6 +198,15 @@ export default function AuthPage() {
                         </p>
                       )}
                       <PasswordRequirements password={loginForm.watch("password")} />
+                      <div className="flex justify-end">
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+                          data-testid="link-forgot-password"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                     </div>
 
                     <Button
@@ -234,6 +244,24 @@ export default function AuthPage() {
                       {registerForm.formState.errors.username && (
                         <p className="text-sm text-destructive" data-testid="error-register-username">
                           {registerForm.formState.errors.username.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email">
+                        Email <span className="text-gray-400 font-normal text-xs">(required for password reset)</span>
+                      </Label>
+                      <Input
+                        id="register-email"
+                        data-testid="input-register-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        {...registerForm.register("email")}
+                      />
+                      {registerForm.formState.errors.email && (
+                        <p className="text-sm text-destructive" data-testid="error-register-email">
+                          {registerForm.formState.errors.email.message}
                         </p>
                       )}
                     </div>
