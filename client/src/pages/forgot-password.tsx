@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
                   </div>
                 </div>
 
-                {/* Dev-mode link display */}
+                {/* Dev-mode link display
                 {devResetUrl && (
                   <div className="rounded-md bg-amber-50 border border-amber-200 p-4 space-y-2">
                     <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
@@ -141,7 +141,7 @@ export default function ForgotPasswordPage() {
                       {devResetUrl}
                     </a>
                   </div>
-                )}
+                )} */}
 
                 <Button
                   variant="outline"
