@@ -548,10 +548,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Normalise line endings to CRLF (required by RFC 6350)
       vcfContent = vcfContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
 
-      // Inject a stable UID so the Contacts app can identify this contact and
-      // update it instead of creating a duplicate on repeated scans.
+      // Inject a stable UID (urn:uuid: format per RFC 6350) so the Contacts app
+      // can identify this contact and update it instead of creating a duplicate.
       if (!vcfContent.includes('UID:')) {
-        vcfContent = vcfContent.replace(/END:VCARD/i, `UID:${qrCode.id}\r\nEND:VCARD`);
+        vcfContent = vcfContent.replace(/END:VCARD/i, `UID:urn:uuid:${qrCode.id}\r\nEND:VCARD`);
       }
 
       // Derive a safe filename from the FN field
@@ -892,7 +892,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       border: 1px solid rgba(255,255,255,0.12);
       color: rgba(255,255,255,0.8);
     }
+    .btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
     .btn-secondary:hover { background: rgba(255,255,255,0.13); }
+    .hint {
+      margin: 0 28px 24px;
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.6;
+    }
+    .hint strong { color: #fbbf24; }
   </style>
 </head>
 <body>
@@ -910,23 +922,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ${renderRow('🌐', 'Website', url, url)}
       ${renderRow('📍', 'Address', address)}
     </div>
-    <div class="actions">
+      <div class="actions">
       <a class="btn btn-primary" href="${vcfUrl}" id="saveBtn">💾 Save to Contacts</a>
       ${phone ? `<a class="btn btn-primary" href="tel:${phone}">📞 Call</a>` : ''}
       ${email ? `<a class="btn btn-primary" href="mailto:${email}">✉️ Email</a>` : ''}
       <a class="btn btn-secondary" href="/">← Home</a>
     </div>
+    <div class="hint">
+      💡 If your phone shows “duplicate contact”, tap <strong>Update</strong> to refresh the existing contact instead of adding a new one.
+    </div>
   </div>
-  <script>
-    // On mobile, immediately trigger the .vcf download so the OS opens Contacts
-    (function() {
-      var ua = navigator.userAgent;
-      var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-      if (isMobile) {
-        window.location.href = '${vcfUrl}';
-      }
-    })();
-  </script>
 </body>
 </html>`);
         }
