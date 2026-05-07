@@ -313,12 +313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
-        // vCard format - if not already formatted, wrap in VCARD structure
-        if (!qrCode.content.includes('BEGIN:VCARD')) {
-          qrContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${qrCode.content}\nEND:VCARD`;
-        } else {
-          qrContent = qrCode.content;
-        }
+        // Encode a URL to the .vcf download endpoint — mobile OS will open Contacts app automatically
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        qrContent = `${baseUrl}/api/vcf/${qrCode.shortCode}`;
       } else {
         // Check if tracking is enabled
         const useTracking = qrCode.enableTracking === "true";
@@ -407,14 +404,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
-        if (!qrCode.content.includes('BEGIN:VCARD')) {
-          qrContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${qrCode.content}\nEND:VCARD`;
-        } else {
-          qrContent = qrCode.content;
-        }
+        // Direct download URL so OS opens Contacts app
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        qrContent = `${baseUrl}/api/vcf/${qrCode.shortCode}`;
       } else {
         qrContent = qrCode.content;
-        
+
         // Add protocol for URLs if missing
         if (qrCode.type === "url" && !qrContent.startsWith("http://") && !qrContent.startsWith("https://")) {
           qrContent = `https://${qrContent}`;
@@ -488,11 +483,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         qrContent = `WIFI:T:${security};S:${networkName};P:${password};H:false;;`;
       } else if (qrCode.type === "vcard") {
-        if (!qrCode.content.includes('BEGIN:VCARD')) {
-          qrContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${qrCode.content}\nEND:VCARD`;
-        } else {
-          qrContent = qrCode.content;
-        }
+        // Tracking image: still encode the vcf URL so Contacts app opens on mobile
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        qrContent = `${baseUrl}/api/vcf/${qrCode.shortCode}`;
       } else {
         // Use tracking URL for analytics
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -531,6 +524,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating tracking QR code image:", error);
       res.status(500).json({ message: "Failed to generate QR code image" });
+    }
+  });
+
+  // ─── Serve raw .vcf file ─────────────────────────────────────────────────
+  // Mobile OS (iOS / Android) automatically opens the Contacts app when it
+  // receives a response with Content-Type: text/vcard.
+  app.get("/api/vcf/:shortCode", async (req, res) => {
+    try {
+      const qrCode = await storage.getQrCodeByShortCode(req.params.shortCode);
+      if (!qrCode || qrCode.type !== "vcard") {
+        return res.status(404).send("Contact not found");
+      }
+
+      // Track the scan
+      await storage.updateQrCodeClickCount(qrCode.id);
+
+      // Ensure well-formed vCard
+      let vcfContent = qrCode.content;
+      if (!vcfContent.includes('BEGIN:VCARD')) {
+        vcfContent = `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${vcfContent}\r\nEND:VCARD`;
+      }
+      // Normalise line endings to CRLF (required by RFC 6350)
+      vcfContent = vcfContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+
+      // Derive a safe filename from the FN field
+      const fnMatch = vcfContent.match(/FN[^:]*:([^\r\n]+)/i);
+      const contactName = fnMatch ? fnMatch[1].trim().replace(/[^\w\s-]/g, '').trim() : 'contact';
+      const filename = `${contactName || 'contact'}.vcf`;
+
+      res.set({
+        'Content-Type': 'text/vcard; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-cache',
+      });
+      res.send(vcfContent);
+    } catch (error) {
+      console.error("Error serving vcf:", error);
+      res.status(500).send("Failed to serve contact");
     }
   });
 
@@ -756,7 +787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 </html>`);
         }
         case "vcard": {
-          // Parse vCard fields for a nice display
+          // Redirect to the .vcf download — mobile OS opens Contacts automatically
+          const vcfUrl = `${req.protocol}://${req.get('host')}/api/vcf/${qrCode.shortCode}`;
+          // Parse vCard fields for the HTML fallback page
           const vcardContent = qrCode.content;
           const getField = (key: string) => {
             const match = vcardContent.match(new RegExp(key + '[^:]*:([^\r\n]+)', 'i'));
@@ -872,23 +905,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ${renderRow('📍', 'Address', address)}
     </div>
     <div class="actions">
-      <button class="btn btn-primary" onclick="saveContact()">💾 Save Contact</button>
+      <a class="btn btn-primary" href="${vcfUrl}" id="saveBtn">💾 Save to Contacts</a>
       ${phone ? `<a class="btn btn-primary" href="tel:${phone}">📞 Call</a>` : ''}
       ${email ? `<a class="btn btn-primary" href="mailto:${email}">✉️ Email</a>` : ''}
       <a class="btn btn-secondary" href="/">← Home</a>
     </div>
   </div>
   <script>
-    const vcfData = ${JSON.stringify(vcardContent)};
-    function saveContact() {
-      const blob = new Blob([vcfData], { type: 'text/vcard;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = '${fullName.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'contact'}.vcf';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+    // On mobile, immediately trigger the .vcf download so the OS opens Contacts
+    (function() {
+      var ua = navigator.userAgent;
+      var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+      if (isMobile) {
+        window.location.href = '${vcfUrl}';
+      }
+    })();
   </script>
 </body>
 </html>`);
