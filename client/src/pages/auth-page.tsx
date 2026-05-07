@@ -135,7 +135,7 @@ export default function AuthPage() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <QrCode className="text-primary text-3xl mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">QR Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">QR Generator Pro</h1>
             </div>
             <p className="text-gray-600">
               Sign in to your account or create a new one to start managing your QR codes.
@@ -336,8 +336,8 @@ export default function AuthPage() {
         </div>
 
         {/* Right Column - Hero Section */}
-        <div className="hidden lg:block">
-          <div className="text-center">
+        <div className="hidden lg:block  ">
+       <div className="text-center">
             <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
               <QrCode className="w-24 h-24 text-primary mx-auto mb-6" />
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -365,7 +365,7 @@ export default function AuthPage() {
                 </div>
               </div>
             </div>
-            <div className="text-gray-600">
+            <div className="text-gray-600 ">
               <p className="font-medium">Trusted by thousands of users worldwide</p>
               <p className="text-sm mt-1">No credit card required • Start free today</p>
             </div>

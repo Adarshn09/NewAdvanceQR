@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { QrCode, Download, Copy, Palette, Settings, Upload, X, Pencil } from "lucide-react";
+import { QrCode, Download, Copy, Palette, Settings, Upload, X, Pencil, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,6 +33,10 @@ export default function QrGenerator() {
   const [vcardTitle, setVcardTitle] = useState("");
   const [vcardUrl, setVcardUrl] = useState("");
   const [vcardAddress, setVcardAddress] = useState("");
+
+  // SMS-specific fields
+  const [smsNumbers, setSmsNumbers] = useState<string[]>([""]) ;
+  const [smsBody, setSmsBody] = useState("");
   
   // Customization options
   const [foregroundColor, setForegroundColor] = useState("#000000");
@@ -100,7 +104,43 @@ export default function QrGenerator() {
     },
   });
 
+  const addSmsNumber = () => setSmsNumbers((prev) => [...prev, ""]);
+  const removeSmsNumber = (idx: number) =>
+    setSmsNumbers((prev) => prev.filter((_, i) => i !== idx));
+  const updateSmsNumber = (idx: number, val: string) =>
+    setSmsNumbers((prev) => prev.map((n, i) => (i === idx ? val : n)));
+
   const handleGenerate = async () => {
+    // SMS validation and building
+    if (qrType === "sms") {
+      const cleanNumbers = smsNumbers.map((n) => n.trim()).filter(Boolean);
+      if (cleanNumbers.length === 0) {
+        toast({
+          title: "Phone number required",
+          description: "Please enter at least one phone number.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const smsContent = JSON.stringify({
+        numbers: cleanNumbers,
+        body: smsBody.trim(),
+      });
+      createQrMutation.mutate({
+        type: qrType,
+        content: smsContent,
+        foregroundColor,
+        backgroundColor,
+        size: size[0],
+        logoData: logoData || undefined,
+        style,
+        errorCorrection,
+        margin: margin[0],
+        enableTracking: enableTracking.toString(),
+      });
+      return;
+    }
+
     // WiFi validation
     if (qrType === "wifi") {
       if (!wifiSsid.trim()) {
@@ -377,15 +417,63 @@ export default function QrGenerator() {
                     📇 Fill in the contact details. Only <strong>Full Name</strong> is required.
                   </p>
                 </div>
-              ) : qrType === "text" || qrType === "sms" ? (
+              ) : qrType === "sms" ? (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Phone Number(s) *</Label>
+                    {smsNumbers.map((num, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <Input
+                          value={num}
+                          onChange={(e) => updateSmsNumber(idx, e.target.value)}
+                          placeholder="e.g. +1234567890"
+                          type="tel"
+                          id={`sms-number-${idx}`}
+                          data-testid={`input-sms-number-${idx}`}
+                          className="flex-1"
+                        />
+                        {smsNumbers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSmsNumber(idx)}
+                            className="text-destructive hover:text-destructive/80 transition-colors p-1 rounded"
+                            aria-label="Remove number"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addSmsNumber}
+                      className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add another number
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="sms-body" className="text-sm text-muted-foreground">Message Body (optional)</Label>
+                    <Textarea
+                      id="sms-body"
+                      value={smsBody}
+                      onChange={(e) => setSmsBody(e.target.value)}
+                      placeholder="Enter your SMS message..."
+                      rows={3}
+                      data-testid="textarea-sms-body"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      💬 Scanning will open the SMS app pre-filled with these number(s) and message.
+                    </p>
+                  </div>
+                </div>
+              ) : qrType === "text" ? (
                 <Textarea
                   id="qr-data"
                   value={qrData}
                   onChange={(e) => setQrData(e.target.value)}
-                  placeholder={
-                    qrType === "text" ? "Enter your text content..." :
-                    "Enter SMS message..."
-                  }
+                  placeholder="Enter your text content..."
                   rows={4}
                   data-testid="textarea-qr-data"
                 />

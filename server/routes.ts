@@ -194,6 +194,20 @@ function escapeHtml(unsafe: string): string {
     .replace(/'/g, "&#039;");
 }
 
+// Parse stored SMS JSON content into a proper sms: URI
+function buildSmsUri(content: string): string {
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed && Array.isArray(parsed.numbers) && parsed.numbers.length > 0) {
+      const nums = parsed.numbers.join(",");
+      return parsed.body
+        ? `sms:${nums}?body=${encodeURIComponent(parsed.body)}`
+        : `sms:${nums}`;
+    }
+  } catch { /* not JSON – fall through */ }
+  return `sms:${content}`;
+}
+
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
@@ -325,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else if (qrCode.type === "phone") {
             qrContent = `tel:${qrContent}`;
           } else if (qrCode.type === "sms") {
-            qrContent = `sms:${qrContent}`;
+            qrContent = buildSmsUri(qrCode.content);
           }
         }
       }
@@ -409,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (qrCode.type === "phone") {
           qrContent = `tel:${qrContent}`;
         } else if (qrCode.type === "sms") {
-          qrContent = `sms:${qrContent}`;
+          qrContent = buildSmsUri(qrCode.content);
         }
       }
 
@@ -583,9 +597,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "phone":
           redirectUrl = `tel:${qrCode.content}`;
           break;
-        case "sms":
-          redirectUrl = `sms:${qrCode.content}`;
+        case "sms": {
+          redirectUrl = buildSmsUri(qrCode.content);
           break;
+        }
         case "wifi": {
           // WiFi QR codes should show instructions
           let networkName: string, password: string, security: string;
