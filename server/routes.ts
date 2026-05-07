@@ -548,6 +548,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Normalise line endings to CRLF (required by RFC 6350)
       vcfContent = vcfContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
 
+      // Inject a stable UID so the Contacts app can identify this contact and
+      // update it instead of creating a duplicate on repeated scans.
+      if (!vcfContent.includes('UID:')) {
+        vcfContent = vcfContent.replace(/END:VCARD/i, `UID:${qrCode.id}\r\nEND:VCARD`);
+      }
+
       // Derive a safe filename from the FN field
       const fnMatch = vcfContent.match(/FN[^:]*:([^\r\n]+)/i);
       const contactName = fnMatch ? fnMatch[1].trim().replace(/[^\w\s-]/g, '').trim() : 'contact';
