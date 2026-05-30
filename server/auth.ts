@@ -170,7 +170,8 @@ export function setupAuth(app: Express) {
         res.status(201).json({ id: user.id, username: user.username });
       });
     } catch (error) {
-      res.status(400).json({ message: "Registration failed" });
+      console.error("Registration error:", error);
+      res.status(400).json({ message: "Registration failed", error: error instanceof Error ? error.message : undefined });
     }
   });
 

@@ -172,7 +172,7 @@ export default function AboutPage() {
                 </Link>
                 <Link href="/dashboard">
                   <Button size="lg" variant="outline" className="text-blue-100 border-blue-200 hover:bg-blue-100 hover:text-blue-700" data-testid="button-dashboard">
-                    Go to Dashboard
+                    Go to Home
                   </Button>
                 </Link>
               </div>

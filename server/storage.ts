@@ -234,7 +234,10 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        email: insertUser.email?.trim() || null,
+      })
       .returning();
     return user;
   }
@@ -246,7 +249,13 @@ export class DatabaseStorage implements IStorage {
     if (existing) return existing;
     const [user] = await db
       .insert(users)
-      .values({ username: profile.username, password: null, googleId: profile.googleId ?? null, githubId: profile.githubId ?? null })
+      .values({
+        username: profile.username,
+        email: profile.email?.trim() || null,
+        password: null,
+        googleId: profile.googleId ?? null,
+        githubId: profile.githubId ?? null,
+      })
       .returning();
     return user;
   }
