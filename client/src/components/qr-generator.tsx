@@ -69,8 +69,9 @@ export default function QrGenerator() {
     onSuccess: (data: { logoData: string }) => {
       setLogoData(data.logoData);
       toast({
+        variant: "success",
         title: "Logo uploaded!",
-        description: "Your logo has been uploaded successfully.",
+        description: "Your logo has been uploaded and will appear in the QR code.",
       });
     },
     onError: (error: Error) => {
@@ -91,8 +92,9 @@ export default function QrGenerator() {
       setGeneratedQr(qrCode);
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
       toast({
-        title: "QR Code Generated!",
-        description: "Your QR code has been successfully created.",
+        variant: "success",
+        title: "QR Code Generated! 🎉",
+        description: "Your QR code is ready to download and share.",
       });
     },
     onError: (error: Error) => {
@@ -793,8 +795,10 @@ export default function QrGenerator() {
                   const shortUrl = `${window.location.origin}/api/r/${generatedQr.shortCode}`;
                   navigator.clipboard.writeText(shortUrl);
                   toast({
+                    variant: "success",
                     title: "Link copied!",
-                    description: "Short URL has been copied to clipboard.",
+                    description: "Short tracking URL copied to clipboard.",
+                    duration: 3000,
                   });
                 }
               }}

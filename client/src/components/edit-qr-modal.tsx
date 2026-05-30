@@ -40,8 +40,10 @@ export default function EditQrModal({ qrCode, onClose }: EditQrModalProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
       toast({
-        title: "QR Code Updated",
-        description: "The link has been updated successfully! The same QR code now points to the new destination.",
+        variant: "success",
+        title: "Link updated! ✅",
+        description: "Your QR code now points to the new destination.",
+        duration: 4000,
       });
       onClose();
     },

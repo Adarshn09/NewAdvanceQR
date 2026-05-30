@@ -5,6 +5,7 @@ import { BarChart3, TrendingUp, Eye, QrCode as QrCodeIcon, Users, Calendar, Load
 import { useQuery } from "@tanstack/react-query";
 import type { QrCode } from "@shared/schema";
 import { format, subDays, isAfter } from "date-fns";
+import { ScanTrendsChart } from "./scan-trends-chart";
 
 export default function AnalyticsDashboard() {
   // Fetch user's QR codes for analytics
@@ -268,21 +269,8 @@ export default function AnalyticsDashboard() {
         </Card>
       </div>
 
-      {/* Chart Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Scan Trends</CardTitle>
-          <CardDescription>QR code scan activity over time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Chart visualization coming soon</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Scan Trends Chart */}
+      <ScanTrendsChart qrCodes={qrCodes} isLoading={isLoading} />
     </div>
   );
 }

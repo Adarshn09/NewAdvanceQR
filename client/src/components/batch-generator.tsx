@@ -98,16 +98,19 @@ export default function BatchGenerator() {
     onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
       toast({
-        title: "Batch Generation Complete",
-        description: `Successfully generated ${results.length} QR codes`,
+        variant: "success",
+        title: "Batch complete! 🎉",
+        description: `Successfully generated ${results.length} QR code${results.length !== 1 ? 's' : ''}.`,
+        duration: 5000,
       });
     },
     onError: () => {
       setIsGenerating(false);
       toast({
-        title: "Error",
-        description: "Failed to complete batch generation",
         variant: "destructive",
+        title: "Batch generation failed",
+        description: "Something went wrong while generating your QR codes. Please try again.",
+        duration: 6000,
       });
     },
   });
@@ -116,18 +119,18 @@ export default function BatchGenerator() {
     const urls = data.urlList.split('\n').filter(url => url.trim());
     if (urls.length === 0) {
       toast({
-        title: "Error",
-        description: "Please enter at least one URL",
-        variant: "destructive",
+        variant: "warning",
+        title: "No URLs entered",
+        description: "Please enter at least one URL to generate QR codes.",
       });
       return;
     }
 
     if (urls.length > 100) {
       toast({
-        title: "Error",
-        description: "Maximum 100 URLs allowed per batch",
-        variant: "destructive",
+        variant: "warning",
+        title: "Too many URLs",
+        description: "Please enter a maximum of 100 URLs per batch.",
       });
       return;
     }

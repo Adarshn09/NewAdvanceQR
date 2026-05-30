@@ -46,8 +46,10 @@ export default function QrTemplates({ onTemplateSelect }: QrTemplatesProps) {
     useTemplateMutation.mutate(template.id);
     onTemplateSelect(template);
     toast({
-      title: "Template Applied",
-      description: `Using "${template.name}" template`,
+      variant: "success",
+      title: "Template applied!",
+      description: `"${template.name}" settings have been loaded into the generator.`,
+      duration: 3500,
     });
   };
 

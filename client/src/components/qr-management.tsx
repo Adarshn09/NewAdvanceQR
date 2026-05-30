@@ -38,8 +38,10 @@ export default function QrManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
       toast({
+        variant: "success",
         title: "QR Code deleted",
-        description: "QR code has been successfully deleted.",
+        description: "The QR code has been permanently removed.",
+        duration: 4000,
       });
     },
     onError: (error: Error) => {
